@@ -1,47 +1,65 @@
 const Web3 = require('web3')
 const web3 = new Web3('http://127.0.0.1:7545')
-const abi = require('../../contracts/artifacts/ticketCreator.json'),
-/* if (typeof web3 !== 'undefined') {
-    // If a web3 instance is already provided by Meta Mask.
-    web3Provider = web3.currentProvider;
-    web3 = new Web3(web3.currentProvider);
-  } else {
-    // Specify default instance if no web3 instance provided
-    web3Provider = new Web3.providers.HttpProvider('http://127.0.0.1:7545');
-    web3 = new Web3(web3Provider);
-  } */
+const abi = require('../../contracts/artifacts/ticketCreator.json')
+const abi2 = require('../../contracts/artifacts/TicketNFT.json')
 
 Management={
-    instance:'',
-    ticket:null,
-    init:  async function () {
-        
-        return instance
-    },
+    account:'',
+
     viewBalance: function(req,response){
         let account;
         let bal;
         web3.eth.getAccounts().then(acc=>{
             account=acc[0]
+            this.account=account
             return account
         }).then(rrr=>{
             web3.eth.getBalance(rrr).then(res=>{
                 bal=res
-                response.json({account: account, balance: res})
+                response.json({account: this.account, balance: res})
             })
         }
         )
         
     }, 
     createTicket: async function(req,res){
-        const ticket =new web3.eth.Contract(abi.abi)
-        ticket.deploy({data:abi.data.bytecode})
-         ticket.methods.createTicket(req.body.name,req.body.symbol, req.body.maxAmount, req.body.price)
-        .estimateGas({gas: 5000000}, function(error, gasAmount){
-            if(gasAmount == 5000000)
-                console.log('Method ran out of gas');
-        }); 
-        res.json(ticket.options)
+        const instance =new web3.eth.Contract(abi.abi)
+        instance.options.address='0x1f8Abd5702ACb009493a4164D6B397B0490b5af2'
+        let gasAmount = await instance.methods.createTicket(req.body.name,req.body.symbol, req.body.maxAmount, req.body.price).estimateGas()
+        instance.methods.createTicket(req.body.name,req.body.symbol, req.body.maxAmount, req.body.price)
+         .send({
+            from:this.account,
+            gas:gasAmount
+        }).then( result=>{
+            res.send(result.events['0'].address)
+         })
+       
+    },
+    showEvent: async function(req,res){
+        let resObj={
+            name:'',
+            symbol:'',
+            creator:'',
+            price:'',
+            maxAmount:''
+        }
+        const ticket =new web3.eth.Contract(abi2.abi)
+        ticket.options.address=req.params["eventId"]
+        console.log(req.params["eventId"])
+        console.log(ticket.methods)
+        
+        resObj.maxAmount= await ticket.methods.maxAmount().call()
+        resObj.name= await ticket.methods.name().call()
+        resObj.symbol= await ticket.methods.symbol().call()
+        resObj.price=await ticket.methods.price().call()
+        resObj.creator=await ticket.methods.creator().call()
+        console.log(resObj)
+        res.json(resObj)
+        /* let price = await ticket.methods.price().call()
+        let name = await ticket.methods.name_().call()
+        let symbol = await ticket.methods.symbol_().call()
+        let author = await ticket.methods.creator().call() */
+        //res.json({price:price,name:name, author:author, maxAmount:maxAmount, symbol: symbol})
     }
 
 }
