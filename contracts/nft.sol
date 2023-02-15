@@ -22,6 +22,7 @@ contract TicketNFT is ERC721URIStorage, Ownable{
         maxAmount=_maxAmount;
         price = _price;
         creator = _owner;
+        isAvailable=true;
     }
     function setMaxAmount(uint256 max)external onlyOwner{
         maxAmount=max;
@@ -32,10 +33,10 @@ contract TicketNFT is ERC721URIStorage, Ownable{
         isAvailable=!isAvailable;
     }
 
-    function buyTicket() external payable{
+    function buyTicket() external payable returns(string memory){
         require(isAvailable, 'Purchase is not available');
         require(totalAmount<maxAmount, 'Sold out, sry m8');
-        require(msg.value==price, 'Incorrect amount');
+        require(msg.value>=price, 'Incorrect amount');
         require(userTickets[msg.sender]<1, 'You already have a ticket, m8');
         userTickets[msg.sender]++;
         totalAmount++;
@@ -49,7 +50,7 @@ contract TicketNFT is ERC721URIStorage, Ownable{
                         '", "description": "Ticket", ',
                         '"holder": "', msg.sender,'",',
                         '"traits": [{ "trait_type": "Checked In", "value": "false" }, { "trait_type": "Purchased", "value": "true" }], ',
-                        '"image": "ipfs://QmPwUPQHFKFvZjmyt3samCQTPyb2mr6mNouMc84xWdyFHj" }'
+                        '"image": "https://ipfs.io/ipfs/QmRc44UzZwnuonnvRDfciNLpAkCJh4gAy7eKyzrNUNEzfq" }'
                     )
                 )
             )
@@ -60,6 +61,7 @@ contract TicketNFT is ERC721URIStorage, Ownable{
         );
         _safeMint(msg.sender, ticketId);
          _setTokenURI(ticketId, tokenURI);
+         return super.tokenURI(ticketId);
 
     }
     function confirmOwnership(address addy) public view returns (bool) {
@@ -69,12 +71,17 @@ contract TicketNFT is ERC721URIStorage, Ownable{
 }
 
 contract ticketCreator{
-    mapping (address=>TicketNFT) public db;
+    mapping (uint256=>TicketNFT) public allEvents;
+    uint256 public indexOfDb=0;
+    function viewIndex() public view returns(uint256){
+        return indexOfDb;
+    }
     function createTicket(string memory _name, string memory _symbol, uint256 _maxAmount, uint256 _price) 
     public
     returns(TicketNFT tokenAddress){
         TicketNFT nft = new TicketNFT(_name, _symbol,_maxAmount,_price, msg.sender);
-        db[msg.sender]=nft;
+        allEvents[indexOfDb]=nft;
+        indexOfDb++;
         return  nft;
     }
 }

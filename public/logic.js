@@ -1,35 +1,16 @@
-$(async function(){
-   let response = await fetch('/api/showBalance')
+$(document).ready(async function(){
+  
+   let response = await fetch('/events/'+window.location.pathname.split('show')[1])
    let result = await response.json();
    console.log(result);
-   $("#accountAddress").html('<p>Your address is '+result.account+'</p>')
-   $("#balance").html('<p>Your balance is '+result.balance+'</p>')
+   $("#name").text(result.name)
+   $("#maxAmount").text(result.maxAmount)
+   $("#totalAmount").text(result.totalAmount)
+   $("#price").text(result.price)
     
-     $("#createTicket").click(async function(){
-      let ticket={
-        name: $('#name').val(),
-        symbol:$('#symbol').val(),
-        maxAmount: $('#maxAmount').val(),
-        price: $('#price').val()
-      }
-      console.log(ticket)
-        let req = await fetch('/api/createTicket', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json;charset=utf-8'
-          },
-          body: JSON.stringify(ticket)
-          
-      })
-         let res=await req.text()
-         
-          console.log(res)
-        
-      });
-
 
       $("#buy").click(async function(){
-        let req = await fetch('/api/buyTicket', {
+        let req = await fetch('/events'+window.location.pathname.split('show')[1]+'/buyTicket', {
           method: 'POST'  
         })
         let res = await req.json()
