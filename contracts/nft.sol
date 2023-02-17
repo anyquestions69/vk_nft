@@ -15,6 +15,7 @@ contract TicketNFT is ERC721URIStorage, Ownable{
     string public name_;
     string public symbol_;
     mapping(address=>uint256) userTickets;
+    mapping(uint256=>address) ticketOwner;
 
     constructor(string memory name, string memory symbol, uint256 _maxAmount, uint256 _price, address _owner) ERC721(name, symbol){
         symbol_=symbol;
@@ -33,36 +34,28 @@ contract TicketNFT is ERC721URIStorage, Ownable{
         isAvailable=!isAvailable;
     }
 
-    function buyTicket() external payable returns(string memory){
+    function buyTicket() external payable returns(uint256){
         require(isAvailable, 'Purchase is not available');
         require(totalAmount<maxAmount, 'Sold out, sry m8');
         require(msg.value>=price, 'Incorrect amount');
         require(userTickets[msg.sender]<1, 'You already have a ticket, m8');
-        userTickets[msg.sender]++;
         totalAmount++;
-        uint256 ticketId=totalAmount-1;
-        string memory json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                        '{ "name": "', name_,' #',
-                        Strings.toString(ticketId),
-                        '", "description": "Ticket", ',
-                        '"holder": "', msg.sender,'",',
-                        '"traits": [{ "trait_type": "Checked In", "value": "false" }, { "trait_type": "Purchased", "value": "true" }], ',
-                        '"image": "https://ipfs.io/ipfs/QmRc44UzZwnuonnvRDfciNLpAkCJh4gAy7eKyzrNUNEzfq" }'
-                    )
-                )
-            )
-        );
-
-        string memory tokenURI = string(
-            abi.encodePacked("data:application/json;base64,", json)
-        );
+        uint256 ticketId=totalAmount;
         _safeMint(msg.sender, ticketId);
-         _setTokenURI(ticketId, tokenURI);
-         return super.tokenURI(ticketId);
+        userTickets[msg.sender]=ticketId;
+        ticketOwner[ticketId]=msg.sender;
+        if (totalAmount==maxAmount) {
+            isAvailable=!isAvailable;
+        }
+         return ticketId;
 
+    }
+    function getTokenById(uint256 id)public view returns(address){
+        require(id<=totalAmount, 'Incorrect ammount');
+        return ticketOwner[id];
+    }
+    function getTokenIdByOwner(address addy)public view returns(uint256){
+        return userTickets[addy];
     }
     function confirmOwnership(address addy) public view returns (bool) {
         return userTickets[addy] > 0;

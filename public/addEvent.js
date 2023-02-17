@@ -1,6 +1,5 @@
 $(document).ready(async function(){
       $('#createTicket').click(async function(event){
-        console.log('hi')
         event.preventDefault();
        let ticket={
          name: $('#name').val(),
@@ -8,7 +7,6 @@ $(document).ready(async function(){
          maxAmount: $('#maxAmount').val(),
          price: $('#price').val()
        }
-       console.log(ticket)
          let req = await fetch('/api/createTicket', {
            method: 'POST',
            headers: {
